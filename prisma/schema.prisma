@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum  Role{
+  user
+  admin
+}
+
+model User{
+  id          Int       @id     @default(autoincrement())
+  userName    String
+  description String?
+  email       String    @unique
+  password    String
+  photo       String?
+  role        Role      @default(user)
+  createdAt   DateTime  @default(now())
+  modifiedAt  DateTime?
+
+  conversationsFrom        Conversation[]   @relation("userFrom")
+  conversationsTo          Conversation[]   @relation("userTo")
+  messages                 Message[]
+}
+
+model Conversation{
+  id              Int       @id     @default(autoincrement())
+  userFromId      Int
+  userToId        Int
+  createdAt       DateTime  @default(now())
+
+  userFrom        User    @relation("userFrom", fields: [userFromId], references: [id], onDelete: Cascade)
+  userTo          User    @relation("userTo", fields: [userToId], references: [id], onDelete: Cascade)
+
+  messages        Message[]
+  @@unique([userFromId, userToId])
+  @@index([userFromId])
+  @@index([userToId])
+}
+
+model Message{
+   id              Int       @id     @default(autoincrement())
+   userId          Int
+   conversationId  Int
+   text            String?
+   createdAt       DateTime  @default(now())
+   deleteAt        DateTime?
+
+   user           User    @relation(fields: [userId], references: [id])
+   conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+   medias         Media[]
+   @@index([conversationId, createdAt])
+}
+
+model Media{
+  id          Int       @id     @default(autoincrement())
+  url         String
+  messageId   Int
+
+  message     Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
